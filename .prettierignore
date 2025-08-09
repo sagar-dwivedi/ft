@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+bower_components
+
+# Build output
+dist
+build
+out
+coverage
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env
+.env.*.local
+
+# Logs
+*.log
+
+# Misc
+*.min.js
+*.min.css
+*.svg
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Git
+.git
+.gitignore
+.nitro
+.output
+.tanstack
+drizzle
+routeTree.gen.ts

@@ -1,11 +1,6 @@
 /// <reference types="vite/client" />
-import type { ReactNode } from 'react'
-import {
-  Outlet,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-} from '@tanstack/react-router'
+import type { ReactNode } from 'react';
+import { Outlet, createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -23,14 +18,14 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
-})
+});
 
 function RootComponent() {
   return (
     <RootDocument>
       <Outlet />
     </RootDocument>
-  )
+  );
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
@@ -44,5 +39,5 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }

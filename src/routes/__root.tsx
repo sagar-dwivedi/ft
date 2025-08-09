@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 import type { ReactNode } from 'react';
 import { Outlet, createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
+import appCss from '../styles/app.css?url';
+import { Toaster } from '@/components/ui/sonner';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,6 +18,7 @@ export const Route = createRootRoute({
         title: 'TanStack Start Starter',
       },
     ],
+    links: [{ rel: 'stylesheet', href: appCss }],
   }),
   component: RootComponent,
 });
@@ -24,6 +27,7 @@ function RootComponent() {
   return (
     <RootDocument>
       <Outlet />
+      <Toaster richColors />
     </RootDocument>
   );
 }

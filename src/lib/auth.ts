@@ -1,16 +1,15 @@
-import { db } from '@/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { reactStartCookies } from 'better-auth/react-start';
-import { user, account, session, verification } from '@/db/schema/schema';
+import { db } from '@/db';
+import { account, session, user, verification } from '@/db/schema';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'sqlite',
     schema: {
-      user,
       account,
       session,
+      user,
       verification,
     },
   }),
@@ -18,5 +17,4 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
   },
-  plugins: [reactStartCookies()],
 });

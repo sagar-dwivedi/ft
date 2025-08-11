@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -9,27 +10,29 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   return (
-    <div className="min-h-screen bg-background antialiased">
+    <div>
       {/* Navigation */}
-      <nav className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur">
+      <nav className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link
             to="/"
-            className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+            className="flex items-center space-x-2 transition-all duration-200 hover:opacity-80"
             aria-label="Finance Home"
           >
-            <div className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <div className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm">
               <Wallet size={18} />
             </div>
             <span className="text-lg font-semibold text-foreground">Finance</span>
           </Link>
 
-          <Button asChild size="sm" variant="outline">
-            <Link to="/dashboard">Dashboard</Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button asChild size="sm" variant="outline">
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </nav>
-
       {/* Hero Section */}
       <section className="mx-auto max-w-3xl px-6 py-24 text-center">
         <h1 className="text-5xl font-light tracking-tight text-foreground sm:text-6xl">
@@ -39,12 +42,6 @@ function Home() {
         <p className="mx-auto mt-6 max-w-lg text-xl text-muted-foreground">
           Clean, focused tools to understand your money better.
         </p>
-        <Button asChild size="lg" className="mt-10 group">
-          <Link to="/dashboard">
-            Get Started
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
-        </Button>
       </section>
 
       {/* Features Section */}

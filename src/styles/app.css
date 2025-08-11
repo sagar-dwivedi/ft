@@ -1,9 +1,4 @@
 /* src/styles/app.css */
-
-/* 1. Google Fonts (Inter + DM Sans + JetBrains Mono) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=DM+Sans:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* 2. Tailwind & animation */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -14,7 +9,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -33,13 +27,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

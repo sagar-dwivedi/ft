@@ -1,8 +1,10 @@
 /// <reference types="vite/client" />
+import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { Outlet, createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
+
+import { ThemeProvider, useTheme } from '@/components/theme-provider';
+import { getThemeServerFn } from '@/lib/theme';
 import appCss from '../styles/app.css?url';
-import { Toaster } from '@/components/ui/sonner';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -20,21 +22,27 @@ export const Route = createRootRoute({
     ],
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
+  loader: () => getThemeServerFn(),
   component: RootComponent,
 });
 
 function RootComponent() {
+  const theme = Route.useLoaderData();
+
   return (
-    <RootDocument>
-      <Outlet />
-      <Toaster richColors />
-    </RootDocument>
+    <ThemeProvider theme={theme}>
+      <RootDocument>
+        <Outlet />
+      </RootDocument>
+    </ThemeProvider>
   );
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  const { theme } = useTheme();
+
   return (
-    <html>
+    <html className={theme} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

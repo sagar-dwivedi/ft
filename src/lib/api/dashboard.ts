@@ -13,6 +13,7 @@ const getDashboardData = createServerFn({ method: 'GET' })
   )
   .handler(async ({ data: { range } }) => {
     const days = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 }[range];
+    const daysLiteral = sql.raw(days.toString()); // inline into SQL
 
     const [kpiData, trendData, recentTx, categorySpending] = await Promise.all([
       // KPI Cards
@@ -22,7 +23,7 @@ const getDashboardData = createServerFn({ method: 'GET' })
           monthlySpending: sql<number | null>`
             SUM(
               CASE
-                WHEN ${transactions.createdAt} >= datetime('now', '-' || ${days} || ' days')
+                WHEN ${transactions.createdAt} >= NOW() - INTERVAL '${daysLiteral} days'
                 THEN ${transactions.amount}
                 ELSE 0
               END
@@ -44,15 +45,15 @@ const getDashboardData = createServerFn({ method: 'GET' })
       db
         .select({
           date: sql<string>`DATE(${transactions.createdAt})`,
-          spending: sql<
-            number | null
-          >`SUM(CASE WHEN ${transactions.amount} < 0 THEN ${transactions.amount} ELSE 0 END)`,
-          income: sql<
-            number | null
-          >`SUM(CASE WHEN ${transactions.amount} > 0 THEN ${transactions.amount} ELSE 0 END)`,
+          spending: sql<number | null>`
+            SUM(CASE WHEN ${transactions.amount} < 0 THEN ${transactions.amount} ELSE 0 END)
+          `,
+          income: sql<number | null>`
+            SUM(CASE WHEN ${transactions.amount} > 0 THEN ${transactions.amount} ELSE 0 END)
+          `,
         })
         .from(transactions)
-        .where(sql`${transactions.createdAt} >= datetime('now', '-' || ${days} || ' days')`)
+        .where(sql`${transactions.createdAt} >= NOW() - INTERVAL '${daysLiteral} days'`)
         .groupBy(sql`DATE(${transactions.createdAt})`)
         .orderBy(sql`DATE(${transactions.createdAt})`),
 
@@ -79,7 +80,7 @@ const getDashboardData = createServerFn({ method: 'GET' })
         .from(transactions)
         .leftJoin(categories, eq(transactions.categoryId, categories.id))
         .where(
-          sql`${transactions.createdAt} >= datetime('now', '-' || ${days} || ' days') AND ${transactions.amount} < 0`
+          sql`${transactions.createdAt} >= NOW() - INTERVAL '${daysLiteral} days' AND ${transactions.amount} < 0`
         )
         .groupBy(categories.name)
         .orderBy(sql`SUM(${transactions.amount}) ASC`)

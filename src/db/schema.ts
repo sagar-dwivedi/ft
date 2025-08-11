@@ -1,28 +1,65 @@
-import { sqliteTable, text, integer, real, index, unique } from 'drizzle-orm/sqlite-core';
+import {
+  pgTable,
+  text,
+  integer,
+  real,
+  index,
+  unique,
+  timestamp,
+  serial,
+  pgEnum,
+  boolean,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const user = sqliteTable('user', {
+// Enums
+export const accountTypeEnum = pgEnum('account_type', [
+  'checking',
+  'savings',
+  'credit_card',
+  'cash',
+  'investment',
+  'loan',
+  'other',
+]);
+export const categoryTypeEnum = pgEnum('category_type', ['income', 'expense']);
+export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense', 'transfer']);
+export const budgetPeriodEnum = pgEnum('budget_period', ['weekly', 'monthly', 'yearly']);
+export const goalTypeEnum = pgEnum('goal_type', [
+  'emergency_fund',
+  'vacation',
+  'retirement',
+  'purchase',
+  'debt_payoff',
+  'other',
+]);
+export const recurringFrequencyEnum = pgEnum('recurring_frequency', [
+  'daily',
+  'weekly',
+  'monthly',
+  'yearly',
+]);
+
+// User table
+export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  emailVerified: integer('email_verified', { mode: 'boolean' })
+  emailVerified: boolean('email_verified')
     .$defaultFn(() => false)
     .notNull(),
   image: text('image'),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .$defaultFn(() => /* @__PURE__ */ new Date())
-    .notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
-    .$defaultFn(() => /* @__PURE__ */ new Date())
-    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const session = sqliteTable('session', {
+// Sessions
+export const session = pgTable('session', {
   id: text('id').primaryKey(),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   token: text('token').notNull().unique(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   userId: text('user_id')
@@ -30,7 +67,8 @@ export const session = sqliteTable('session', {
     .references(() => user.id, { onDelete: 'cascade' }),
 });
 
-export const account = sqliteTable('account', {
+// Account providers
+export const account = pgTable('account', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -40,72 +78,63 @@ export const account = sqliteTable('account', {
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
-  accessTokenExpiresAt: integer('access_token_expires_at', {
-    mode: 'timestamp',
-  }),
-  refreshTokenExpiresAt: integer('refresh_token_expires_at', {
-    mode: 'timestamp',
-  }),
+  accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at', { withTimezone: true }),
   scope: text('scope'),
   password: text('password'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const verification = sqliteTable('verification', {
+// Verification
+export const verification = pgTable('verification', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
-    () => /* @__PURE__ */ new Date()
-  ),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
-    () => /* @__PURE__ */ new Date()
-  ),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // Accounts
-export const accounts = sqliteTable(
+export const accounts = pgTable(
   'accounts',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
       .references(() => user.id, { onDelete: 'cascade' })
       .notNull(),
     name: text('name').notNull(),
-    type: text('type', {
-      enum: ['checking', 'savings', 'credit_card', 'cash', 'investment', 'loan', 'other'],
-    }).notNull(),
+    type: accountTypeEnum('type').notNull(),
     balance: real('balance').default(0),
     currency: text('currency').default('USD'),
-    isActive: integer('is_active', { mode: 'boolean' }).default(true),
-    isIncludeInTotal: integer('is_include_in_total', { mode: 'boolean' }).default(true),
+    isActive: boolean('is_active').default(true),
+    isIncludeInTotal: boolean('is_include_in_total').default(true),
     institution: text('institution'),
     accountNumber: text('account_number'),
     color: text('color').default('#3b82f6'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [index('accounts_user_idx').on(table.userId)]
 );
 
 // Categories
-export const categories = sqliteTable(
+export const categories = pgTable(
   'categories',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
       .references(() => user.id, { onDelete: 'cascade' })
       .notNull(),
     name: text('name').notNull(),
-    type: text('type', { enum: ['income', 'expense'] }).notNull(),
+    type: categoryTypeEnum('type').notNull(),
     icon: text('icon').default('help-circle'),
     color: text('color').default('#6b7280'),
     parentId: integer('parent_id').references(() => categories.id),
-    isSystem: integer('is_system', { mode: 'boolean' }).default(false),
-    createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
+    isSystem: boolean('is_system').default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [
     unique().on(table.userId, table.name, table.type),
@@ -115,40 +144,32 @@ export const categories = sqliteTable(
 );
 
 // Transactions
-export const transactions = sqliteTable(
+export const transactions = pgTable(
   'transactions',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
       .references(() => user.id, { onDelete: 'cascade' })
       .notNull(),
     accountId: integer('account_id')
       .references(() => accounts.id, { onDelete: 'cascade' })
       .notNull(),
     categoryId: integer('category_id').references(() => categories.id),
-
-    type: text('type', { enum: ['income', 'expense', 'transfer'] }).notNull(),
+    type: transactionTypeEnum('type').notNull(),
     amount: real('amount').notNull(),
     description: text('description').notNull(),
     notes: text('notes'),
-
-    date: integer('date', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
-
-    // Transfer specific
+    date: timestamp('date', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
     transferToAccountId: integer('transfer_to_account_id').references(() => accounts.id),
-
-    // Additional data
     payee: text('payee'),
-    tags: text('tags'), // JSON string
-    attachments: text('attachments'), // JSON string
-    isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
-    recurringRule: text('recurring_rule'), // JSON string
-
-    // Metadata
-    location: text('location'), // JSON string {lat, lng, address}
-    receipt: text('receipt'), // base64 image or file URL
+    tags: text('tags'),
+    attachments: text('attachments'),
+    isRecurring: boolean('is_recurring').default(false),
+    recurringRule: text('recurring_rule'),
+    location: text('location'),
+    receipt: text('receipt'),
   },
   (table) => [
     index('transactions_user_date_idx').on(table.userId, table.date),
@@ -159,35 +180,27 @@ export const transactions = sqliteTable(
 );
 
 // Budgets
-export const budgets = sqliteTable(
+export const budgets = pgTable(
   'budgets',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
+    id: serial('id').primaryKey(),
+    userId: text('user_id')
       .references(() => user.id, { onDelete: 'cascade' })
       .notNull(),
     categoryId: integer('category_id')
       .references(() => categories.id, { onDelete: 'cascade' })
       .notNull(),
-
     amount: real('amount').notNull(),
-    period: text('period', { enum: ['weekly', 'monthly', 'yearly'] }).default('monthly'),
-
-    // Budget period
-    startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
-    endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
-
-    // Rollover settings
-    isRollover: integer('is_rollover', { mode: 'boolean' }).default(false),
+    period: budgetPeriodEnum('period').default('monthly'),
+    startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+    endDate: timestamp('end_date', { withTimezone: true }).notNull(),
+    isRollover: boolean('is_rollover').default(false),
     rolloverAmount: real('rollover_amount').default(0),
-
-    // Alerts as JSON string
     alerts: text('alerts').default(
       '[{"percentage":80,"enabled":true},{"percentage":100,"enabled":true}]'
     ),
-
-    createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [
     unique().on(table.userId, table.categoryId, table.startDate),
@@ -195,117 +208,94 @@ export const budgets = sqliteTable(
   ]
 );
 
-// Budget period tracking
-export const budgetPeriods = sqliteTable('budget_periods', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+// Budget periods
+export const budgetPeriods = pgTable('budget_periods', {
+  id: serial('id').primaryKey(),
   budgetId: integer('budget_id')
     .references(() => budgets.id, { onDelete: 'cascade' })
     .notNull(),
-  startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
-  endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+  startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+  endDate: timestamp('end_date', { withTimezone: true }).notNull(),
   allocatedAmount: real('allocated_amount').notNull(),
   spentAmount: real('spent_amount').default(0),
   rolloverFromPrevious: real('rollover_from_previous').default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
-// Financial goals
-export const goals = sqliteTable('goals', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id')
+// Goals
+export const goals = pgTable('goals', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id')
     .references(() => user.id, { onDelete: 'cascade' })
     .notNull(),
-
   name: text('name').notNull(),
   description: text('description'),
   targetAmount: real('target_amount').notNull(),
   currentAmount: real('current_amount').default(0),
-
-  type: text('type', {
-    enum: ['emergency_fund', 'vacation', 'retirement', 'purchase', 'debt_payoff', 'other'],
-  }).notNull(),
-  targetDate: integer('target_date', { mode: 'timestamp' }),
-
-  // Goal settings
-  isAutoContribute: integer('is_auto_contribute', { mode: 'boolean' }).default(false),
+  type: goalTypeEnum('type').notNull(),
+  targetDate: timestamp('target_date', { withTimezone: true }),
+  isAutoContribute: boolean('is_auto_contribute').default(false),
   autoContributeAmount: real('auto_contribute_amount'),
-  autoContributeRule: text('auto_contribute_rule'), // JSON string
-
+  autoContributeRule: text('auto_contribute_rule'),
   color: text('color').default('#10b981'),
   image: text('image'),
-
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // Goal contributions
-export const goalContributions = sqliteTable('goal_contributions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const goalContributions = pgTable('goal_contributions', {
+  id: serial('id').primaryKey(),
   goalId: integer('goal_id')
     .references(() => goals.id, { onDelete: 'cascade' })
     .notNull(),
   transactionId: integer('transaction_id').references(() => transactions.id, {
     onDelete: 'cascade',
   }),
-
   amount: real('amount').notNull(),
-  date: integer('date', { mode: 'timestamp' }).notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   notes: text('notes'),
-
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
 // Recurring transactions
-export const recurringTransactions = sqliteTable('recurring_transactions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id')
+export const recurringTransactions = pgTable('recurring_transactions', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id')
     .references(() => user.id, { onDelete: 'cascade' })
     .notNull(),
-
   name: text('name').notNull(),
   description: text('description'),
-
-  frequency: text('frequency', { enum: ['daily', 'weekly', 'monthly', 'yearly'] }).notNull(),
+  frequency: recurringFrequencyEnum('frequency').notNull(),
   interval: integer('interval').default(1),
-
   amount: real('amount').notNull(),
-  type: text('type', { enum: ['income', 'expense'] }).notNull(),
+  type: categoryTypeEnum('type').notNull(),
   categoryId: integer('category_id').references(() => categories.id),
   accountId: integer('account_id')
     .references(() => accounts.id, { onDelete: 'cascade' })
     .notNull(),
-
-  startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
-  endDate: integer('end_date', { mode: 'timestamp' }),
-
-  nextOccurrence: integer('next_occurrence', { mode: 'timestamp' }).notNull(),
-
-  isActive: integer('is_active', { mode: 'boolean' }).default(true),
-
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
+  startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+  endDate: timestamp('end_date', { withTimezone: true }),
+  nextOccurrence: timestamp('next_occurrence', { withTimezone: true }).notNull(),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // User preferences
-export const userPreferences = sqliteTable('user_preferences', {
-  userId: integer('user_id')
+export const userPreferences = pgTable('user_preferences', {
+  userId: text('user_id')
     .references(() => user.id, { onDelete: 'cascade' })
     .primaryKey(),
-
   currency: text('currency').default('USD'),
   dateFormat: text('date_format').default('MM/dd/yyyy'),
   timezone: text('timezone').default('UTC'),
-
-  // JSON strings for complex data
   dashboardLayout: text('dashboard_layout'),
   notifications: text('notifications'),
-
-  // Privacy settings
-  isAnalyticsEnabled: integer('is_analytics_enabled', { mode: 'boolean' }).default(true),
-  isMarketingEmails: integer('is_marketing_emails', { mode: 'boolean' }).default(false),
-
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(new Date()),
+  isAnalyticsEnabled: boolean('is_analytics_enabled').default(true),
+  isMarketingEmails: boolean('is_marketing_emails').default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // ================== RELATIONS ==================

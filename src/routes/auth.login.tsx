@@ -56,7 +56,6 @@ function RouteComponent() {
         {
           email: values.email,
           password: values.password,
-          callbackURL: '/dashboard',
           rememberMe: values.rememberMe,
         },
         {
@@ -64,6 +63,7 @@ function RouteComponent() {
             toast.success('Welcome back!', {
               description: 'You have been signed in successfully.',
             });
+            navigate({ to: '/dashboard' });
           },
           onError: () => {
             toast.error('Sign in failed', {

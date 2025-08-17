@@ -1,62 +1,82 @@
+import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
+import { ConvexQueryClient } from '@convex-dev/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   HeadContent,
-  Scripts,
   Outlet,
-} from '@tanstack/react-router'
-import { QueryClient } from '@tanstack/react-query'
-import * as React from 'react'
-import appCss from '~/styles/app.css?url'
+  Scripts,
+  useRouteContext,
+} from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getCookie, getWebRequest } from '@tanstack/react-start/server';
+import { ConvexReactClient } from 'convex/react';
+import * as React from 'react';
+import { authClient } from '~/lib/auth-client';
+import { fetchSession, getCookieName } from '~/lib/server-auth-utils';
+import appCss from '~/styles/app.css?url';
+
+const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
+  const sessionCookieName = await getCookieName();
+  const token = getCookie(sessionCookieName);
+  const request = getWebRequest();
+  const { session } = await fetchSession(request);
+  return {
+    token,
+    user: session?.user,
+  };
+});
 
 export const Route = createRootRouteWithContext<{
-  queryClient: QueryClient
+  queryClient: QueryClient;
+  convexClient: ConvexReactClient;
+  convexQueryClient: ConvexQueryClient;
 }>()({
   head: () => ({
     meta: [
-      {
-        charSet: 'utf-8',
-      },
+      { charSet: 'utf-8' },
       {
         name: 'viewport',
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Finance Dashboard',
+      },
+      {
+        name: 'description',
+        content: 'A modern finance dashboard built with TanStack and Convex.',
       },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
-      {
-        rel: 'apple-touch-icon',
-        sizes: '180x180',
-        href: '/apple-touch-icon.png',
-      },
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '32x32',
-        href: '/favicon-32x32.png',
-      },
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '16x16',
-        href: '/favicon-16x16.png',
-      },
-      { rel: 'manifest', href: '/site.webmanifest', color: '#fffff' },
       { rel: 'icon', href: '/favicon.ico' },
+      { rel: 'manifest', href: '/site.webmanifest' },
     ],
   }),
-  notFoundComponent: () => <div>Route not found</div>,
+  beforeLoad: async (ctx) => {
+    const auth = await fetchAuth();
+    const { token, user } = auth;
+    if (token) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
+    }
+    return { token, user };
+  },
   component: RootComponent,
-})
+});
 
 function RootComponent() {
+  const context = useRouteContext({ from: Route.id });
+
   return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
-  )
+    <ConvexBetterAuthProvider
+      client={context.convexClient}
+      authClient={authClient}
+    >
+      <RootDocument>
+        <Outlet />
+      </RootDocument>
+    </ConvexBetterAuthProvider>
+  );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -70,5 +90,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }

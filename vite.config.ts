@@ -1,14 +1,14 @@
-import { defineConfig, loadEnv } from 'vite'
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-import tsConfigPaths from 'vite-tsconfig-paths'
-import tailwindcss from '@tailwindcss/vite'
-import viteReact from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import tsConfigPaths from 'vite-tsconfig-paths';
+import tailwindcss from '@tailwindcss/vite';
+import viteReact from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
 
   if (!env.VITE_CONVEX_URL) {
-    throw new Error('Missing required environment variable: VITE_CONVEX_URL')
+    throw new Error('Missing required environment variable: VITE_CONVEX_URL');
   }
 
   return {
@@ -19,5 +19,5 @@ export default defineConfig(({ mode }) => {
       tanstackStart({ customViteReactPlugin: true }),
       viteReact(),
     ],
-  }
-})
+  };
+});

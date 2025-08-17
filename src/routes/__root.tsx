@@ -12,8 +12,10 @@ import { createServerFn } from '@tanstack/react-start';
 import { getCookie, getWebRequest } from '@tanstack/react-start/server';
 import { ConvexReactClient } from 'convex/react';
 import * as React from 'react';
+import { ThemeProvider, useTheme } from '~/components/theme-provider';
 import { authClient } from '~/lib/auth-client';
 import { fetchSession, getCookieName } from '~/lib/server-auth-utils';
+import { getThemeServerFn } from '~/lib/theme';
 import appCss from '~/styles/app.css?url';
 
 const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
@@ -61,27 +63,33 @@ export const Route = createRootRouteWithContext<{
     }
     return { token, user };
   },
+  loader: () => getThemeServerFn(), // runs server-side → theme cookie
   component: RootComponent,
 });
 
 function RootComponent() {
   const context = useRouteContext({ from: Route.id });
+  const theme = Route.useLoaderData(); // server value
 
   return (
     <ConvexBetterAuthProvider
       client={context.convexClient}
       authClient={authClient}
     >
-      <RootDocument>
-        <Outlet />
-      </RootDocument>
+      <ThemeProvider theme={theme}>
+        <RootDocument>
+          <Outlet />
+        </RootDocument>
+      </ThemeProvider>
     </ConvexBetterAuthProvider>
   );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+
   return (
-    <html>
+    <html lang="en" className={theme} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

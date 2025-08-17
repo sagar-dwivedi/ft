@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import { ThemeToggle } from './theme-toggle';
 
 type SidebarItem = {
   title: string;
@@ -126,7 +127,7 @@ export function AppSidebar() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <span>Theme</span>
+                  <ThemeToggle />{' '}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <span>Log Out</span>

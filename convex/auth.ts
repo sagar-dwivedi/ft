@@ -4,7 +4,7 @@ import {
   type PublicAuthFunctions,
 } from '@convex-dev/better-auth';
 import { api, components, internal } from './_generated/api';
-import type { Id, DataModel } from './_generated/dataModel';
+import type { DataModel, Id } from './_generated/dataModel';
 
 const authFunctions: AuthFunctions = internal.auth;
 const publicAuthFunctions: PublicAuthFunctions = api.auth;

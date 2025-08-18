@@ -8,10 +8,12 @@
  * @module
  */
 
+import type * as accounts from "../accounts.js";
 import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
+import type * as transactions from "../transactions.js";
 
 import type {
   ApiFromModules,
@@ -28,10 +30,12 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  accounts: typeof accounts;
   auth: typeof auth;
   dashboard: typeof dashboard;
   helpers: typeof helpers;
   http: typeof http;
+  transactions: typeof transactions;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

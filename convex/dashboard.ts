@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
+import { api } from './_generated/api';
 import { query } from './_generated/server';
 import { getMonthBounds, getPreviousMonthBounds } from './helpers';
-import { api } from './_generated/api';
 
 // Get user's total balance across all active accounts
 export const getTotalBalance = query({

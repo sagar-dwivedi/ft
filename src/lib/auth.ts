@@ -1,8 +1,8 @@
 import { convexAdapter } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
 import { betterAuth } from 'better-auth';
-import { betterAuthComponent } from '../../convex/auth';
 import { type GenericCtx } from '../../convex/_generated/server';
+import { betterAuthComponent } from '../../convex/auth';
 
 const siteUrl = process.env.VITE_CONVEX_SITE_URL ?? 'http://localhost:3000';
 

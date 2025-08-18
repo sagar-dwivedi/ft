@@ -11,8 +11,8 @@ import {
 import { createServerFn } from '@tanstack/react-start';
 import { getCookie, getWebRequest } from '@tanstack/react-start/server';
 import { ConvexReactClient } from 'convex/react';
-import * as React from 'react';
 import { ThemeProvider, useTheme } from '~/components/theme-provider';
+import { Toaster } from '~/components/ui/sonner';
 import { authClient } from '~/lib/auth-client';
 import { fetchSession, getCookieName } from '~/lib/server-auth-utils';
 import { getThemeServerFn } from '~/lib/theme';
@@ -80,6 +80,7 @@ function RootComponent() {
         <RootDocument>
           <Outlet />
         </RootDocument>
+        <Toaster />
       </ThemeProvider>
     </ConvexBetterAuthProvider>
   );

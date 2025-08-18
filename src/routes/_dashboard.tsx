@@ -1,14 +1,24 @@
-import {
-  createFileRoute,
-  Outlet,
-  redirect,
-  useRouterState,
-} from '@tanstack/react-router';
-import { Search, Bell, Settings } from 'lucide-react';
-import { Suspense } from 'react';
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { Bell, LogOut, Search, Settings, User } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
 import { AppSidebar } from '~/components/app-sidebar';
+import { ThemeToggle } from '~/components/theme-toggle';
 import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '~/components/ui/command';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu';
 import { Separator } from '~/components/ui/separator';
 import {
   SidebarInset,
@@ -16,147 +26,152 @@ import {
   SidebarTrigger,
 } from '~/components/ui/sidebar';
 import { Skeleton } from '~/components/ui/skeleton';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '~/components/ui/breadcrumb';
+import { useCurrentRouteTitle } from '~/hooks/use-current-route-title';
 import { cn } from '~/lib/utils';
 
+// 🔹 Route definition
 export const Route = createFileRoute('/_dashboard')({
-  beforeLoad: async ({ context }) => {
-    if (!context.user?.id) throw redirect({ to: '/auth' });
+  beforeLoad: async ({ context, location }) => {
+    if (!context.user?.id) {
+      throw redirect({
+        to: '/auth',
+        search: { next: location.href },
+      });
+    }
   },
   component: DashboardLayout,
-  pendingComponent: DashboardLayoutSkeleton,
-  errorComponent: ({ error }) => (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-destructive text-2xl font-bold">Error</h1>
-        <p className="text-muted-foreground mt-2">
-          {error.message || 'Something went wrong'}
-        </p>
-      </div>
-    </div>
-  ),
 });
 
-// Loading skeleton for the entire dashboard layout
-function DashboardLayoutSkeleton() {
-  return (
-    <div className="flex h-screen">
-      <div className="bg-sidebar w-64 border-r">
-        <Skeleton className="h-full w-full" />
-      </div>
-      <div className="flex-1">
-        <div className="h-16 border-b p-4">
-          <Skeleton className="h-8 w-32" />
-        </div>
-        <div className="p-6">
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    </div>
-  );
-}
+// 🔹 Dashboard Header
+function DashboardHeader() {
+  const title = useCurrentRouteTitle();
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-// Hook to generate breadcrumbs based on current route
-function useBreadcrumbs() {
-  const router = useRouterState();
-  const pathname = router.location.pathname;
+  // Add keyboard shortcut for command palette
+  useEffect(() => {
+    setIsMounted(true);
 
-  const pathSegments = pathname.split('/').filter(Boolean);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandOpen(true);
+      }
+    };
 
-  if (pathSegments.length <= 1) {
-    return [{ label: 'Dashboard', href: '/dashboard' }];
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  if (!isMounted) {
+    return null; // Avoid hydration mismatch for theme
   }
 
-  const breadcrumbs = pathSegments.map((segment, index) => {
-    const href = '/' + pathSegments.slice(0, index + 1).join('/');
-    const label = segment.charAt(0).toUpperCase() + segment.slice(1);
-
-    return { label, href };
-  });
-
-  return breadcrumbs;
-}
-
-function DashboardHeader() {
-  const breadcrumbs = useBreadcrumbs();
-
   return (
-    <header className="bg-background/80 sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b px-4 backdrop-blur-sm">
+    <header className="bg-background/80 sticky top-0 z-10 flex h-16 items-center gap-4 border-b px-4 backdrop-blur-sm">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="hover:bg-accent rounded-md p-1.5 transition-colors" />
         <Separator orientation="vertical" className="h-5" />
 
-        {/* Breadcrumb navigation */}
-        <nav aria-label="breadcrumb">
-          <Breadcrumb>
-            <BreadcrumbList>
-              {breadcrumbs.map((crumb, index) => (
-                <div key={crumb.href} className="flex items-center">
-                  {index > 0 && <BreadcrumbSeparator />}
-                  <BreadcrumbItem>
-                    {index === breadcrumbs.length - 1 ? (
-                      <BreadcrumbPage className="font-semibold">
-                        {crumb.label}
-                      </BreadcrumbPage>
-                    ) : (
-                      <BreadcrumbLink
-                        href={crumb.href}
-                        className="hover:text-foreground transition-colors"
-                      >
-                        {crumb.label}
-                      </BreadcrumbLink>
-                    )}
-                  </BreadcrumbItem>
-                </div>
-              ))}
-            </BreadcrumbList>
-          </Breadcrumb>
-        </nav>
+        {/* Breadcrumb / Title */}
+        <h1 className="text-xl font-semibold truncate max-w-[200px] sm:max-w-none">
+          {title}
+        </h1>
       </div>
 
       {/* Header actions */}
       <div className="ml-auto flex items-center gap-2">
-        {/* Search */}
-        <div className="relative hidden md:block">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-          <Input
-            placeholder="Search..."
-            className="bg-background h-9 w-64 pl-9 shadow-none"
-            aria-label="Search dashboard"
-          />
-        </div>
+        {/* 🔎 Global Search Trigger */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden md:flex h-9 w-64 justify-start gap-2 text-muted-foreground"
+          onClick={() => setCommandOpen(true)}
+        >
+          <Search className="h-4 w-4" />
+          <span>Search...</span>
+          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </Button>
 
-        {/* Notifications */}
+        {/* 🔔 Notifications */}
         <Button
           variant="ghost"
           size="sm"
-          className="h-9 w-9 p-0"
+          className="h-9 w-9 p-0 relative"
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
+          <span className="sr-only">Notifications</span>
+          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
         </Button>
 
-        {/* Settings */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-9 w-9 p-0"
-          aria-label="Settings"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        {/* 🌓 Theme Toggle */}
+        <ThemeToggle />
+
+        {/* 👤 User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 rounded-full"
+              aria-label="User menu"
+            >
+              <User className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
+      {/* 🔎 Command Palette */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Type a command or search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Navigation">
+            <CommandItem
+              value="accounts"
+              onSelect={() => {
+                // Add navigation logic here
+                setCommandOpen(false);
+              }}
+            >
+              Accounts
+            </CommandItem>
+            <CommandItem
+              value="settings"
+              onSelect={() => {
+                // Add navigation logic here
+                setCommandOpen(false);
+              }}
+            >
+              Settings
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </header>
   );
 }
 
+// 🔹 Dashboard Content
 function DashboardContent() {
   return (
     <main
@@ -189,6 +204,7 @@ function DashboardContent() {
   );
 }
 
+// 🔹 Final Layout
 function DashboardLayout() {
   return (
     <SidebarProvider>

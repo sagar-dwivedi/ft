@@ -1,6 +1,12 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import {
+  createFileRoute,
+  redirect,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Alert, AlertDescription } from '~/components/ui/alert';
 import { Button } from '~/components/ui/button';
 import {
   Card,
@@ -11,7 +17,6 @@ import {
 } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { Alert, AlertDescription } from '~/components/ui/alert';
 import { authClient } from '~/lib/auth-client';
 
 interface FormData {
@@ -37,6 +42,7 @@ export const Route = createFileRoute('/auth')({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = useSearch({ from: '/auth' });
   const [isRegister, setIsRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -152,7 +158,7 @@ function AuthPage() {
 
         // Small delay to show success message
         setTimeout(async () => {
-          await navigate({ to: '/dashboard' });
+          await navigate({ to: next || '/dashboard' });
         }, 1000);
       }
     } catch (err) {

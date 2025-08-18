@@ -1,5 +1,5 @@
-import { createAuth } from './auth';
 import { reactStartHelpers } from '@convex-dev/better-auth/react-start';
+import { createAuth } from './auth';
 
 export const { fetchSession, reactStartHandler, getCookieName } =
   reactStartHelpers(createAuth, {

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Home, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Home } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
 import {

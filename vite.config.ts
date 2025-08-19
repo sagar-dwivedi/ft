@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       tailwindcss(),
       tsConfigPaths({ projects: ['./tsconfig.json'] }),
-      tanstackStart({ customViteReactPlugin: true }),
+      tanstackStart({ customViteReactPlugin: true, target: 'bun' }),
       viteReact(),
     ],
   };

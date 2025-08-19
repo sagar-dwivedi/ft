@@ -42,7 +42,7 @@ export const Route = createFileRoute('/auth')({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next } = useSearch({ from: '/auth' });
+  const { next } = useSearch({ from: '/auth' }) as { next: string };
   const [isRegister, setIsRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

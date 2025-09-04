@@ -2,7 +2,7 @@ import { ArrowDownLeft, ArrowUpRight, Eye, Plus } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
-import { formatCurrency, formatDate } from '~/lib/utils';
+import { formatCurrency, formatDate } from '~/lib/format';
 
 export function RecentTransactions({
   transactions,

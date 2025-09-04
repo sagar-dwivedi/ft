@@ -4,8 +4,8 @@ import { useMutation } from '@tanstack/react-query';
 import { api } from 'convex/_generated/api';
 import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { z } from 'zod';
+import { useToast } from '~/hooks/use-toast';
 import { Button } from '../ui/button';
 import {
   Form,
@@ -50,6 +50,7 @@ const schema = z.object({
 
 export function CreateAccountForm({ onSuccess }: { onSuccess?: () => void }) {
   const convexCreate = useConvexMutation(api.accounts.create);
+  const toast = useToast();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -59,15 +60,19 @@ export function CreateAccountForm({ onSuccess }: { onSuccess?: () => void }) {
   const create = useMutation({
     mutationFn: convexCreate,
     onSuccess: () => {
-      toast.success('Account created 🎉', {
+      toast.add({
+        title: 'Account created 🎉',
         description: 'Your account has been successfully added.',
+        type: 'success',
       });
       form.reset();
       onSuccess?.();
     },
     onError: (err) => {
-      toast.error('Something went wrong', {
+      toast.add({
+        title: 'Something went wrong',
         description: err.message ?? 'Please try again later.',
+        type: 'error',
       });
     },
   });
@@ -108,7 +113,7 @@ export function CreateAccountForm({ onSuccess }: { onSuccess?: () => void }) {
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -133,7 +138,7 @@ export function CreateAccountForm({ onSuccess }: { onSuccess?: () => void }) {
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
+                    <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="max-h-60 overflow-y-auto">

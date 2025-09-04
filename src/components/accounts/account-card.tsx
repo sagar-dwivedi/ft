@@ -1,6 +1,6 @@
 import type { Doc } from 'convex/_generated/dataModel';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { formatCurrency } from '~/lib/utils';
+import { formatCurrency } from '~/lib/format';
 
 export function AccountCard({ account }: { account: Doc<'accounts'> }) {
   return (

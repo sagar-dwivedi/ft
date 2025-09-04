@@ -10,7 +10,7 @@ import {
 } from '~/components/ui/card';
 import { Progress } from '~/components/ui/progress';
 import { Skeleton } from '~/components/ui/skeleton';
-import { formatCurrency } from '~/lib/utils';
+import { formatCurrency } from '~/lib/format';
 
 export function SavingsGoalCard({
   savingsGoal,

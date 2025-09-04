@@ -1,6 +1,8 @@
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
 import { ConvexQueryClient } from '@convex-dev/react-query';
+import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClient } from '@tanstack/react-query';
+import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools';
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -8,11 +10,12 @@ import {
   Scripts,
   useRouteContext,
 } from '@tanstack/react-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { createServerFn } from '@tanstack/react-start';
-import { getCookie, getWebRequest } from '@tanstack/react-start/server';
+import { getCookie, getRequest } from '@tanstack/react-start/server';
 import { ConvexReactClient } from 'convex/react';
-import { ThemeProvider, useTheme } from '~/components/theme-provider';
-import { Toaster } from '~/components/ui/sonner';
+import { ThemeProvider } from '~/components/theme-provider';
+import { ToastProvider } from '~/components/ui/toast';
 import { authClient } from '~/lib/auth-client';
 import { fetchSession, getCookieName } from '~/lib/server-auth-utils';
 import { getThemeServerFn } from '~/lib/theme';
@@ -21,7 +24,7 @@ import appCss from '~/styles/app.css?url';
 const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const sessionCookieName = await getCookieName();
   const token = getCookie(sessionCookieName);
-  const request = getWebRequest();
+  const request = getRequest();
   const { session } = await fetchSession(request);
   return {
     token,
@@ -69,33 +72,43 @@ export const Route = createRootRouteWithContext<{
 
 function RootComponent() {
   const context = useRouteContext({ from: Route.id });
-  const theme = Route.useLoaderData(); // server value
 
   return (
     <ConvexBetterAuthProvider
       client={context.convexClient}
       authClient={authClient}
     >
-      <ThemeProvider theme={theme}>
-        <RootDocument>
-          <Outlet />
-        </RootDocument>
-        <Toaster />
+      <ThemeProvider>
+        <ToastProvider>
+          <RootDocument>
+            <Outlet />
+          </RootDocument>
+        </ToastProvider>
+        <TanStackDevtools
+          plugins={[
+            {
+              name: 'TanStack Query',
+              render: <ReactQueryDevtoolsPanel />,
+            },
+            {
+              name: 'TanStack Router',
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+          ]}
+        />
       </ThemeProvider>
     </ConvexBetterAuthProvider>
   );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const { theme } = useTheme();
-
   return (
-    <html lang="en" className={theme} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
+        <div className="root">{children}</div>
         <Scripts />
       </body>
     </html>

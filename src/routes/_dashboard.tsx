@@ -27,6 +27,7 @@ import {
 } from '~/components/ui/sidebar';
 import { Skeleton } from '~/components/ui/skeleton';
 import { useCurrentRouteTitle } from '~/hooks/use-current-route-title';
+import { authClient } from '~/lib/auth-client';
 import { cn } from '~/lib/utils';
 
 // 🔹 Route definition
@@ -112,7 +113,7 @@ function DashboardHeader() {
 
         {/* 👤 User Menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <Button
               variant="ghost"
               size="sm"
@@ -132,7 +133,13 @@ function DashboardHeader() {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              onClick={async () => {
+                await authClient.revokeSessions();
+                await authClient.signOut();
+              }}
+              className="cursor-pointer text-destructive focus:text-destructive"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>

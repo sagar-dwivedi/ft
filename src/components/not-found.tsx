@@ -33,7 +33,7 @@ export function NotFoundComponent() {
         </CardContent>
 
         <CardFooter className="flex justify-center">
-          <Button asChild>
+          <Button>
             <Link to="/">
               <Home className="mr-2 h-4 w-4" />
               Go Home

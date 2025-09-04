@@ -11,7 +11,7 @@ import { CreateTransactionForm } from './create-transaction-form';
 export function AddTransactionSheet() {
   return (
     <Sheet>
-      <SheetTrigger asChild>
+      <SheetTrigger>
         <Button>Add transaction</Button>
       </SheetTrigger>
       <SheetContent>

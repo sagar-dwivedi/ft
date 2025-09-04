@@ -1,4 +1,3 @@
-// Helper function to get start and end of month
 export function getMonthBounds(date: Date) {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
   const end = new Date(

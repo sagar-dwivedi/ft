@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { formatCurrency, formatDate } from '~/lib/utils';
+import { formatCurrency } from '~/lib/format';
 
 export function DataTable({ data }: { data: Doc<'transactions'>[] }) {
   return (

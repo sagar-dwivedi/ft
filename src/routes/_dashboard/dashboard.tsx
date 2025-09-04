@@ -1,5 +1,5 @@
 import { convexQuery } from '@convex-dev/react-query';
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 import { Skeleton } from '~/components/ui/skeleton';
-import { formatCurrency } from '~/lib/utils';
+import { formatCurrency } from '~/lib/format';
 
 export const Route = createFileRoute('/_dashboard/dashboard')({
   loader: async ({ context }) => {
@@ -64,7 +64,7 @@ function RouteComponent() {
   const { user } = Route.useRouteContext();
 
   // Query dashboard data
-  const { data: dashboardData } = useQuery(
+  const { data: dashboardData } = useSuspenseQuery(
     convexQuery(api.dashboard.getDashboardData, {
       userId: user?.id as Id<'users'>,
     })
@@ -181,7 +181,7 @@ function RouteComponent() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">This Month</CardTitle>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger>
                   <Button variant="ghost" size="sm">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>

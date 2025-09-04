@@ -1,7 +1,6 @@
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useRouteContext } from '@tanstack/react-router';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import { useForm } from 'react-hook-form';
@@ -37,15 +36,8 @@ const schema = z.object({
 });
 
 export function CreateTransactionForm() {
-  const { user } = useRouteContext({ from: '/_dashboard/transactions' });
-  const { data: accounts, isLoading: accountsLoading } = useQuery(
-    convexQuery(api.accounts.list, {})
-  );
-  const { data: categories } = useQuery(
-    convexQuery(api.dashboard.getUserCategories, {
-      userId: user?.id as Id<'users'>,
-    })
-  );
+  const { data: accounts } = useQuery(convexQuery(api.accounts.list, {}));
+
   const create = useMutation({
     mutationFn: useConvexMutation(api.transactions.create),
   });
@@ -84,11 +76,7 @@ export function CreateTransactionForm() {
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        accountsLoading ? 'Loading...' : 'Select account'
-                      }
-                    />
+                    <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

@@ -1,39 +1,37 @@
-import {
-  createFileRoute,
-  redirect,
-  useNavigate,
-  useSearch,
-} from '@tanstack/react-router';
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Button } from '~/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '~/components/ui/card';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { authClient } from '~/lib/auth-client';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { AlertCircle, CheckCircle2, EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { FieldError, FieldRoot, Form, FormControl, FormLabel } from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
+import { authClient } from "~/lib/auth-client";
 
-interface FormData {
-  email: string;
-  password: string;
-  name?: string;
-}
+const authSearchSchema = z.object({
+  mode: z.enum(['login', 'signup']).optional().catch('login'),
+  next: z.string().optional(),
+});
 
-interface ValidationErrors {
-  email?: string;
-  password?: string;
-  name?: string;
-}
+const baseSchema = z.object({
+  email: z.email({ message: 'Please enter a valid email address' }),
+  password: z
+    .string()
+    .min(6, { message: 'Password must be at least 6 characters' }),
+  name: z.string().optional(),
+});
+
+const registerSchema = baseSchema.extend({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+});
 
 export const Route = createFileRoute('/auth')({
-  beforeLoad: async (ctx) => {
-    if (ctx.context.user?.id) {
+  validateSearch: authSearchSchema,
+  beforeLoad: async ({ context }) => {
+    if (context.user?.id) {
       throw redirect({ to: '/dashboard' });
     }
   },
@@ -41,157 +39,103 @@ export const Route = createFileRoute('/auth')({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
-  const { next } = useSearch({ from: '/auth' }) as { next: string };
-  const [isRegister, setIsRegister] = useState(false);
+  const navigate = Route.useNavigate();
+  const search = Route.useSearch();
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
-  const [success, setSuccess] = useState<string | undefined>(undefined);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
-    {}
-  );
-  const [formData, setFormData] = useState<FormData>({
-    email: '',
-    password: '',
-    name: '',
+  const [error, setError] = useState<string>();
+  const [success, setSuccess] = useState<string>();
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const isRegister = search.mode === 'signup';
+
+  const form = useForm<z.infer<typeof baseSchema>>({
+    resolver: zodResolver(isRegister ? registerSchema : baseSchema),
+    defaultValues: { email: '', password: '', name: '' },
   });
 
-  // Clear messages when switching between login/register
   useEffect(() => {
+    form.reset({ email: '', password: '', name: '' });
     setError(undefined);
     setSuccess(undefined);
-    setValidationErrors({});
-  }, [isRegister]);
+    setFormErrors({});
+  }, [isRegister, form]);
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password: string): boolean => {
-    return password.length >= 6;
-  };
-
-  const validateName = (name: string): boolean => {
-    return name.trim().length >= 2;
-  };
-
-  const validateForm = (data: FormData): ValidationErrors => {
-    const errors: ValidationErrors = {};
-
-    if (!validateEmail(data.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    if (!validatePassword(data.password)) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-
-    if (isRegister && !validateName(data.name || '')) {
-      errors.name = 'Name must be at least 2 characters';
-    }
-
-    return errors;
-  };
-
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
-    // Clear field-specific validation error when user starts typing
-    if (validationErrors[field]) {
-      setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async (values: z.infer<typeof baseSchema>) => {
     setLoading(true);
     setError(undefined);
     setSuccess(undefined);
-
-    const fd = new FormData(e.currentTarget);
-    const payload: FormData = {
-      email: (fd.get('email') as string).trim(),
-      password: fd.get('password') as string,
-      name: isRegister ? (fd.get('name') as string).trim() : undefined,
-    };
-
-    // Validate form
-    const errors = validateForm(payload);
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      setLoading(false);
-      return;
-    }
-
-    setValidationErrors({});
+    setFormErrors({});
 
     try {
       const res = isRegister
         ? await authClient.signUp.email({
-            email: payload.email,
-            password: payload.password,
-            name: payload.name!,
-          })
+          email: values.email,
+          password: values.password,
+          name: values.name ?? '',
+        })
         : await authClient.signIn.email({
-            email: payload.email,
-            password: payload.password,
-          });
+          email: values.email,
+          password: values.password,
+        });
 
       if (res.error) {
-        // Handle specific auth errors
-        const errorMessage = res.error.message;
-        if (errorMessage?.toLowerCase().includes('email')) {
-          setValidationErrors({ email: errorMessage });
-        } else if (errorMessage?.toLowerCase().includes('password')) {
-          setValidationErrors({ password: errorMessage });
+        const message = res.error.message;
+        if (message?.toLowerCase().includes('email')) {
+          setFormErrors({ email: message });
+        } else if (message?.toLowerCase().includes('password')) {
+          setFormErrors({ password: message });
         } else {
-          setError(errorMessage);
+          setError(message || 'An error occurred during authentication');
         }
       } else {
-        if (isRegister) {
-          setSuccess('Account created successfully! Redirecting...');
-        } else {
-          setSuccess('Welcome back! Redirecting...');
-        }
-
-        // Small delay to show success message
-        setTimeout(async () => {
-          await navigate({ to: next || '/dashboard' });
-        }, 1000);
+        setSuccess(
+          isRegister
+            ? 'Account created! Redirecting...'
+            : 'Welcome back! Redirecting...'
+        );
+        setTimeout(() => navigate({ to: search.next || '/dashboard' }), 1000);
       }
     } catch (err) {
-      console.error('Auth error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleAuthMode = () => {
-    setIsRegister((prev) => !prev);
-    setFormData({ email: '', password: '', name: '' });
-    setShowPassword(false);
+  const toggleMode = () => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        mode: isRegister ? 'login' : 'signup',
+      }),
+      replace: true,
+    });
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-950 dark:to-slate-900">
+    <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-3xl font-bold tracking-tight">
+          <CardTitle className="text-3xl font-bold">
             {isRegister ? 'Create Account' : 'Welcome Back'}
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription>
             {isRegister
               ? 'Join us and take control of your finances'
               : 'Sign in to access your dashboard'}
           </CardDescription>
         </CardHeader>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <Form
+          form={form}
+          className="space-y-4"
+          errors={formErrors}
+          onClearErrors={() => setFormErrors({})}
+          onSubmit={form.handleSubmit(onSubmit)}
+        >
           <CardContent className="space-y-4">
-            {/* Success Alert */}
             {success && (
               <Alert className="border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
                 <CheckCircle2 className="h-4 w-4" />
@@ -199,117 +143,72 @@ function AuthPage() {
               </Alert>
             )}
 
-            {/* General Error Alert */}
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="danger">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            {/* Name field for registration */}
             {isRegister && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  required
-                  placeholder="Ada Lovelace"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="focus-visible:ring-primary"
-                  aria-invalid={!!validationErrors.name}
-                  aria-describedby={
-                    validationErrors.name ? 'name-error' : undefined
-                  }
-                />
-                {validationErrors.name && (
-                  <p id="name-error" className="text-destructive text-sm">
-                    {validationErrors.name}
-                  </p>
-                )}
-              </div>
+              <FieldRoot name="name" className="flex flex-col items-start gap-2">
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Ada Lovelace"
+                    disabled={loading}
+                    {...form.register('name')}
+                  />
+                </FormControl>
+                <FieldError className="text-sm text-red-600" />
+              </FieldRoot>
             )}
 
-            {/* Email field */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="ada@example.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="focus-visible:ring-primary"
-                autoComplete={isRegister ? 'email' : 'email'}
-                aria-invalid={!!validationErrors.email}
-                aria-describedby={
-                  validationErrors.email ? 'email-error' : undefined
-                }
-              />
-              {validationErrors.email && (
-                <p id="email-error" className="text-destructive text-sm">
-                  {validationErrors.email}
-                </p>
-              )}
-            </div>
-
-            {/* Password field */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
+            <FieldRoot name="email" className="flex flex-col items-start gap-2">
+              <FormLabel>Email Address</FormLabel>
+              <FormControl>
                 <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) =>
-                    handleInputChange('password', e.target.value)
-                  }
-                  className="focus-visible:ring-primary pr-10"
-                  autoComplete={
-                    isRegister ? 'new-password' : 'current-password'
-                  }
-                  aria-invalid={!!validationErrors.password}
-                  aria-describedby={
-                    validationErrors.password ? 'password-error' : undefined
-                  }
+                  type="email"
+                  placeholder="ada@example.com"
+                  disabled={loading}
+                  {...form.register('email')}
                 />
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {validationErrors.password && (
-                <p id="password-error" className="text-destructive text-sm">
-                  {validationErrors.password}
-                </p>
-              )}
-              {isRegister && !validationErrors.password && (
-                <p className="text-muted-foreground text-xs">
-                  Password must be at least 6 characters
-                </p>
-              )}
-            </div>
+              </FormControl>
+              <FieldError className="text-sm text-red-600" />
+            </FieldRoot>
+
+            <FieldRoot name="password" className="flex flex-col items-start gap-2">
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  trailingIcon={
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-4 w-4 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                      onClick={() => setShowPassword((p) => !p)}
+                      disabled={loading}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOffIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeIcon className="h-4 w-4" />
+                      )}
+                    </Button>
+                  }
+                  {...form.register('password')}
+                />
+              </FormControl>
+              <FieldError className="text-sm text-red-600" />
+            </FieldRoot>
           </CardContent>
 
           <CardContent className="flex flex-col space-y-4 pt-0">
-            {/* Submit button */}
             <Button
               type="submit"
               disabled={loading}
@@ -318,7 +217,7 @@ function AuthPage() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                   {isRegister ? 'Creating Account...' : 'Signing In...'}
                 </>
               ) : isRegister ? (
@@ -328,24 +227,22 @@ function AuthPage() {
               )}
             </Button>
 
-            {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background text-muted-foreground px-2">
+                <span className="bg-background px-2 text-muted-foreground">
                   Or
                 </span>
               </div>
             </div>
 
-            {/* Toggle auth mode button */}
             <Button
               variant="outline"
               type="button"
               className="h-10"
-              onClick={toggleAuthMode}
+              onClick={toggleMode}
               disabled={loading}
             >
               {isRegister
@@ -353,7 +250,7 @@ function AuthPage() {
                 : 'Need an account? Register'}
             </Button>
           </CardContent>
-        </form>
+        </Form>
       </Card>
     </main>
   );

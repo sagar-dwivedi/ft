@@ -1,7 +1,7 @@
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
-import { formatCurrency } from '~/lib/utils';
+import { formatCurrency } from '~/lib/format';
 
 export function FinancialSummaryCard({
   title,

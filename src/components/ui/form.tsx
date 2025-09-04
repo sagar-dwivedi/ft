@@ -1,6 +1,4 @@
-import { Label as LabelPrimitive, Slot as SlotPrimitive } from 'radix-ui';
 import * as React from 'react';
-
 import {
   Controller,
   FormProvider,
@@ -10,11 +8,11 @@ import {
   type FieldPath,
   type FieldValues,
 } from 'react-hook-form';
+import { Field } from '@base-ui-components/react/field';
+import { Form as BaseUIForm } from '@base-ui-components/react/form';
 
 import { Label } from '~/components/ui/label';
 import { cn } from '~/lib/utils';
-
-const Form = FormProvider;
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -78,7 +76,7 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
     <FormItemContext.Provider value={{ id }}>
       <div
         data-slot="form-item"
-        className={cn('grid gap-2', className)}
+        className={cn('group grid gap-2', className)}
         {...props}
       />
     </FormItemContext.Provider>
@@ -88,7 +86,7 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
 function FormLabel({
   className,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: React.ComponentProps<typeof Label>) {
   const { error, formItemId } = useFormField();
 
   return (
@@ -102,14 +100,12 @@ function FormLabel({
   );
 }
 
-function FormControl({
-  ...props
-}: React.ComponentProps<typeof SlotPrimitive.Slot>) {
+function FormControl({ ...props }: React.ComponentProps<'div'>) {
   const { error, formItemId, formDescriptionId, formMessageId } =
     useFormField();
 
   return (
-    <SlotPrimitive.Slot
+    <div
       data-slot="form-control"
       id={formItemId}
       aria-describedby={
@@ -156,8 +152,47 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+// New Base UI compatible components
+interface BaseFormProps extends React.ComponentProps<typeof BaseUIForm> {
+  form?: any; // react-hook-form form instance
+}
+
+function BaseForm({ form, children, ...props }: BaseFormProps) {
+  if (form) {
+    return (
+      <FormProvider {...form}>
+        <BaseUIForm {...props}>{children}</BaseUIForm>
+      </FormProvider>
+    );
+  }
+
+  return <BaseUIForm {...props}>{children}</BaseUIForm>;
+}
+
+// Base UI Field wrapper
+function BaseField({ name, children, ...props }: any) {
+  return (
+    <Field.Root name={name} {...props}>
+      {children}
+    </Field.Root>
+  );
+}
+
+// Base UI Field Control wrapper
+function BaseFieldControl(props: any) {
+  return <Field.Control {...props} />;
+}
+
+// Base UI Field Error wrapper
+function BaseFieldError(props: any) {
+  return <Field.Error {...props} />;
+}
+
 export {
-  Form,
+  BaseForm as Form,
+  BaseField as FieldRoot,
+  BaseFieldControl as FieldControl,
+  BaseFieldError as FieldError,
   FormControl,
   FormDescription,
   FormField,

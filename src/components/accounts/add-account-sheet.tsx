@@ -14,7 +14,7 @@ export function AddAccountSheet() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+      <SheetTrigger>
         <Button>Add account</Button>
       </SheetTrigger>
       <SheetContent>

@@ -7,10 +7,10 @@
     "start": "vite --port 3000",
     "build": "vite build && tsc",
     "serve": "vite preview",
-    "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "openapi-ts": "openapi-ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.6",
@@ -27,10 +27,12 @@
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.6",
-    "tw-animate-css": "^1.3.6"
+    "tw-animate-css": "^1.3.6",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
+    "@hey-api/openapi-ts": "0.82.4",
     "@types/node": "^24.3.1",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
